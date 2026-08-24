@@ -113,6 +113,32 @@ def test_profile_add_with_all_flags(tmp_path, monkeypatch, capsys):
     assert manager.get_profile("work")["app_id"] == "aa-1"
 
 
+def test_profile_add_preserves_explicit_zero_timeout(tmp_path, monkeypatch):
+    manager_path = tmp_path / "profiles.json"
+    monkeypatch.setattr("artemis_api.cli.ProfileManager", lambda: ProfileManager(path=manager_path))
+    code = main(
+        ["profile", "add", "work", "--app-id", "aa-1", "--api-key", "kg-1", "--timeout", "0"]
+    )
+    assert code == 0
+    manager = ProfileManager(path=manager_path)
+    assert manager.get_profile("work")["timeout"] == 0.0
+
+
+def test_profile_command_reports_oserror_as_clean_message(tmp_path, monkeypatch, capsys):
+    manager_path = tmp_path / "profiles.json"
+    manager = ProfileManager(path=manager_path)
+    manager.add_profile("work", app_id="aa-1")
+
+    def raise_oserror(name):
+        raise OSError("disk full")
+
+    monkeypatch.setattr("artemis_api.cli.ProfileManager", lambda: manager)
+    monkeypatch.setattr(manager, "delete_profile", raise_oserror)
+    code = main(["profile", "delete", "work"])
+    assert code == 1
+    assert "disk full" in capsys.readouterr().err
+
+
 def test_profile_add_prompts_for_missing_required_fields(tmp_path, monkeypatch):
     manager_path = tmp_path / "profiles.json"
     monkeypatch.setattr("artemis_api.cli.ProfileManager", lambda: ProfileManager(path=manager_path))

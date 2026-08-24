@@ -81,7 +81,12 @@ class Config:
         resolved_timeout = self._resolve(
             timeout, "ARTEMIS_TIMEOUT", profile_values.get("timeout"), _DEFAULT_TIMEOUT
         )
-        self._timeout = float(resolved_timeout)
+        try:
+            self._timeout = float(resolved_timeout)
+        except (TypeError, ValueError) as exc:
+            raise ConfigurationError(
+                f"Invalid timeout value {resolved_timeout!r}; must be a number."
+            ) from exc
 
         if self._user_reference is None:
             self._user_reference = f"repl-{uuid.uuid4().hex[:8]}"

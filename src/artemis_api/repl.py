@@ -101,7 +101,9 @@ class ArtemisChatRepl:
         Args:
             text: The user's input text.
         """
-        assert self._session_id is not None
+        if self._session_id is None:
+            print("No active session. Try /reset to start a new one.")
+            return
         try:
             reply = self.client.execute_turn(self._session_id, text)
         except ArtemisAPIError as exc:
@@ -114,6 +116,15 @@ class ArtemisChatRepl:
         print(_HELP_TEXT)
 
     def _cmd_reset(self) -> None:
-        """Terminate the current session and start a fresh one."""
+        """Terminate the current session and start a fresh one.
+
+        If creating the new session fails, the failure is reported like any
+        other turn instead of ending the REPL -- the user can retry
+        ``/reset`` once the underlying issue (e.g. a transient network
+        error) clears up.
+        """
         self._terminate_session()
-        self._start_session(announce=True)
+        try:
+            self._start_session(announce=True)
+        except ArtemisAPIError as exc:
+            print(f"Error: {exc}")

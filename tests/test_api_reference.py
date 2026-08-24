@@ -8,6 +8,7 @@ import pytest
 
 from artemis_api import api_reference
 from artemis_api.api_reference import SessionInfo
+from artemis_api.exceptions import APIResponseError
 
 
 def test_build_sessions_url():
@@ -104,8 +105,15 @@ def test_normalize_session_response_ignores_non_text_output():
 
 
 def test_normalize_session_response_raises_without_session_id():
-    with pytest.raises(KeyError):
+    with pytest.raises(APIResponseError):
         api_reference.normalize_session_response({})
+
+
+def test_normalize_session_response_null_session_key_falls_back_to_flat_shape():
+    payload = {"session": None, "sessionId": "s-1", "sessionReference": "ref-1"}
+    info = api_reference.normalize_session_response(payload)
+    assert info.session_id == "s-1"
+    assert info.session_reference == "ref-1"
 
 
 def test_extract_output_text_joins_multiple_text_items():

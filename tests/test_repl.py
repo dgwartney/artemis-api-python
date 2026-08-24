@@ -94,6 +94,33 @@ def test_run_reset_command_creates_new_session(monkeypatch, capsys):
     assert client.terminate_session.call_args_list[0].args == ("s-1",)
 
 
+def test_run_reset_failure_reports_error_and_continues(monkeypatch, capsys):
+    client = make_client()
+    client.create_session.side_effect = [
+        SessionInfo(session_id="s-1", session_reference=None, welcome_text=None),
+        APIRequestError("network blip"),
+    ]
+    inputs = iter(["/reset", "exit"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
+    ArtemisChatRepl(client).run()
+    out = capsys.readouterr().out
+    assert "Error: network blip" in out
+
+
+def test_send_with_no_active_session_reports_message_without_crashing(monkeypatch, capsys):
+    client = make_client()
+    client.create_session.side_effect = [
+        SessionInfo(session_id="s-1", session_reference=None, welcome_text=None),
+        APIRequestError("network blip"),
+    ]
+    inputs = iter(["/reset", "hello", "exit"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
+    ArtemisChatRepl(client).run()
+    out = capsys.readouterr().out
+    assert "No active session" in out
+    client.execute_turn.assert_not_called()
+
+
 def test_run_unknown_slash_command_is_sent_as_text(monkeypatch):
     client = make_client()
     client.execute_turn.return_value = "reply"

@@ -23,6 +23,31 @@ _MAX_LOG_FILE_BYTES = 10 * 1024 * 1024
 _LOG_FILE_BACKUP_COUNT = 3
 
 
+_TOKEN_RE = re.compile(r"[A-Za-z0-9_-]+")
+_MIN_MASKED_TOKEN_LENGTH = 10
+_MASKED_PREFIX_LENGTH = 4
+
+
+def _mask_token_if_key_shaped(match: re.Match[str]) -> str:
+    """Mask a single alnum/dash/underscore token if it looks like a key or opaque ID.
+
+    A token is considered key-shaped if it's long enough and contains at
+    least one digit -- this catches API keys, session IDs, and similar
+    tokens while leaving ordinary alphabetic words (header names, log
+    message text) untouched.
+
+    Args:
+        match: A regex match for one ``[A-Za-z0-9_-]+`` run.
+
+    Returns:
+        The masked token, or the original token if it isn't key-shaped.
+    """
+    token = match.group(0)
+    if len(token) >= _MIN_MASKED_TOKEN_LENGTH and any(char.isdigit() for char in token):
+        return f"{token[:_MASKED_PREFIX_LENGTH]}****"
+    return token
+
+
 def mask_sensitive_data(text: str) -> str:
     """Mask API keys and other opaque tokens in a string.
 
@@ -34,14 +59,10 @@ def mask_sensitive_data(text: str) -> str:
         masked placeholder that preserves a short, non-sensitive prefix.
 
     Examples:
-        >>> mask_sensitive_data('x-api-key: "abcdefghijklmnopqrstuvwxyz123456"')
-        'x-api-key: "abcdefgh****"'
+        >>> mask_sensitive_data('x-api-key: "kg-abc1234567890"')
+        'x-api-key: "kg-a****"'
     """
-    return re.sub(
-        r"([A-Za-z0-9_-]{8})[A-Za-z0-9_-]{12,}",
-        r"\1****",
-        text,
-    )
+    return _TOKEN_RE.sub(_mask_token_if_key_shaped, text)
 
 
 class SensitiveDataFilter(logging.Filter):

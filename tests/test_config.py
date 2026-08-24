@@ -72,6 +72,19 @@ def test_user_reference_falls_back_to_generated_uuid(monkeypatch, profile_manage
     assert len(config.user_reference) == len("repl-") + 8
 
 
+def test_invalid_timeout_env_var_raises_configuration_error(monkeypatch, profile_manager):
+    monkeypatch.setenv("ARTEMIS_TIMEOUT", "not-a-number")
+    with pytest.raises(ConfigurationError, match="Invalid timeout"):
+        Config(app_id="aa-1", api_key="kg-1", profile_manager=profile_manager)
+
+
+def test_invalid_timeout_profile_value_raises_configuration_error(monkeypatch, profile_manager):
+    monkeypatch.delenv("ARTEMIS_TIMEOUT", raising=False)
+    profile_manager.add_profile("p", app_id="aa-1", api_key="kg-1", timeout="fast")
+    with pytest.raises(ConfigurationError, match="Invalid timeout"):
+        Config(profile="p", profile_manager=profile_manager)
+
+
 def test_app_id_property_raises_when_missing(profile_manager):
     config = Config(api_key="kg-1", profile_manager=profile_manager)
     with pytest.raises(ConfigurationError):

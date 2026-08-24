@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, TypedDict
 
+from artemis_api.exceptions import APIResponseError
+
 
 class SessionIdentityType(StrEnum):
     """Type discriminator for an item in a ``sessionIdentity`` array.
@@ -273,14 +275,16 @@ def normalize_session_response(payload: dict[str, Any]) -> SessionInfo:
         reference, and optional welcome text.
 
     Raises:
-        KeyError: If the response contains neither a top-level nor nested
-            ``sessionId``.
+        APIResponseError: If the response contains neither a top-level nor
+            nested ``sessionId``.
     """
-    session_obj = payload.get("session", payload)
+    session_obj = payload.get("session")
+    if session_obj is None:
+        session_obj = payload
 
     session_id = session_obj.get("sessionId") or payload.get("sessionId")
     if not session_id:
-        raise KeyError("Response did not contain a sessionId")
+        raise APIResponseError("Response did not contain a sessionId")
 
     session_reference = session_obj.get("sessionReference") or payload.get("sessionReference")
     welcome_text = _extract_welcome_text(payload.get("output"))

@@ -69,15 +69,25 @@ class ProfileManager:
 
         Returns:
             The parsed store, or an empty default structure if the file
-            doesn't exist or is corrupt.
+            doesn't exist yet.
+
+        Raises:
+            ConfigurationError: If the file exists but can't be read or
+                parsed as JSON. This is deliberately not swallowed into an
+                empty store -- doing so would make the next write silently
+                overwrite (and permanently lose) every previously saved
+                profile.
         """
         if not self._path.exists():
             return {"profiles": {}, "default_profile": None}
 
         try:
             data = json.loads(self._path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return {"profiles": {}, "default_profile": None}
+        except (json.JSONDecodeError, OSError) as exc:
+            raise ConfigurationError(
+                f"Profile store at {self._path} is unreadable or corrupt: {exc}. "
+                "Fix or remove it before adding/updating profiles."
+            ) from exc
 
         data.setdefault("profiles", {})
         data.setdefault("default_profile", None)

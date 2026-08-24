@@ -15,7 +15,12 @@ from artemis_api.logging_config import (
 
 def test_mask_sensitive_data_masks_long_quoted_tokens():
     text = 'x-api-key: "abcdefghijklmnopqrstuvwxyz123456"'
-    assert mask_sensitive_data(text) == 'x-api-key: "abcdefgh****"'
+    assert mask_sensitive_data(text) == 'x-api-key: "abcd****"'
+
+
+def test_mask_sensitive_data_masks_short_api_key():
+    # Regression: an 11-char key must still be masked, not just long ones.
+    assert mask_sensitive_data("kg-abc12345") == "kg-a****"
 
 
 def test_mask_sensitive_data_leaves_short_strings_alone():
@@ -72,7 +77,7 @@ def test_sensitive_data_filter_masks_msg_and_tuple_args(caplog):
     logger.setLevel(logging.INFO)
     with caplog.at_level(logging.INFO, logger="test.filter.tuple"):
         logger.info("key=%s", "abcdefghijklmnopqrstuvwxyz123456")
-    assert "abcdefgh****" in caplog.text
+    assert "abcd****" in caplog.text
     assert "abcdefghijklmnopqrstuvwxyz123456" not in caplog.text
 
 
@@ -82,7 +87,7 @@ def test_sensitive_data_filter_masks_dict_args(caplog):
     logger.setLevel(logging.INFO)
     with caplog.at_level(logging.INFO, logger="test.filter.dict"):
         logger.info("key=%(key)s", {"key": "abcdefghijklmnopqrstuvwxyz123456"})
-    assert "abcdefgh****" in caplog.text
+    assert "abcd****" in caplog.text
 
 
 def test_log_api_request_logs_info_and_debug_body(capsys):

@@ -128,7 +128,7 @@ def _handle_profile_add(args: argparse.Namespace, manager: ProfileManager) -> in
         value = getattr(args, field, None)
         if value is None and field in _PROMPT_REQUIRED_FIELDS:
             value = getpass.getpass("api_key: ") if field == "api_key" else input(f"{field}: ")
-        if value:
+        if value not in (None, ""):
             fields[field] = value
     manager.add_profile(args.name, **fields)
     print(f"Saved profile {args.name!r}.")
@@ -184,7 +184,7 @@ def _handle_profile_command(args: argparse.Namespace) -> int:
             manager.set_default(args.name)
             print(f"Default profile set to {args.name!r}.")
             return 0
-    except ConfigurationError as exc:
+    except (ConfigurationError, OSError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     return 1  # pragma: no cover - unreachable: argparse enforces a valid profile_command choice

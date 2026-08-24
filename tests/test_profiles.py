@@ -89,12 +89,16 @@ def test_file_and_dir_permissions(profile_manager, profiles_path):
     assert file_mode == 0o600
 
 
-def test_corrupt_profiles_file_treated_as_empty(profiles_path):
+def test_corrupt_profiles_file_raises_instead_of_silently_wiping(profiles_path):
     profiles_path.parent.mkdir(parents=True, exist_ok=True)
     profiles_path.write_text("not valid json{")
     manager = ProfileManager(path=profiles_path)
-    assert manager.list_profiles() == {}
-    assert manager.get_default_profile_name() is None
+    with pytest.raises(ConfigurationError, match="corrupt"):
+        manager.list_profiles()
+    with pytest.raises(ConfigurationError, match="corrupt"):
+        manager.get_default_profile_name()
+    # The corrupt file itself must be left untouched, not overwritten.
+    assert profiles_path.read_text() == "not valid json{"
 
 
 def test_save_cleans_up_temp_file_on_failure(profile_manager, profiles_path, monkeypatch):
