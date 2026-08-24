@@ -52,7 +52,18 @@ def _build_parser() -> argparse.ArgumentParser:
         The top-level parser.
     """
     parent = _build_parent_parser()
-    parser = argparse.ArgumentParser(prog="artemis", parents=[parent])
+    parser = argparse.ArgumentParser(
+        prog="artemis",
+        parents=[parent],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "examples:\n"
+            "  artemis --app-id aa-1234 --api-key kg-abcd\n"
+            "  artemis profile add my-agent --app-id aa-1234 --api-key kg-abcd\n"
+            "  artemis --profile my-agent\n"
+            "  artemis profile list\n"
+        ),
+    )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
     subparsers = parser.add_subparsers(dest="command")
@@ -62,25 +73,33 @@ def _build_parser() -> argparse.ArgumentParser:
     profile_parser = subparsers.add_parser("profile", help="Manage connection profiles")
     profile_subparsers = profile_parser.add_subparsers(dest="profile_command", required=True)
 
-    add_parser = profile_subparsers.add_parser("add", help="Create or update a profile")
-    add_parser.add_argument("name")
-    add_parser.add_argument("--host", default=None)
-    add_parser.add_argument("--app-id", default=None)
-    add_parser.add_argument("--env-name", default=None)
-    add_parser.add_argument("--api-key", default=None)
-    add_parser.add_argument("--user-reference", default=None)
-    add_parser.add_argument("--timeout", type=float, default=None)
+    add_parser = profile_subparsers.add_parser(
+        "add",
+        help="Create or update a profile",
+        epilog="app-id and api-key are prompted for interactively if omitted.",
+    )
+    add_parser.add_argument("name", help="Name to save this profile under")
+    add_parser.add_argument("--host", default=None, help="Agent Platform host")
+    add_parser.add_argument("--app-id", default=None, help="Agentic App ID")
+    add_parser.add_argument("--env-name", default=None, help="Deployment environment name")
+    add_parser.add_argument("--api-key", default=None, help="API key")
+    add_parser.add_argument(
+        "--user-reference", default=None, help="Stable client/user identifier"
+    )
+    add_parser.add_argument(
+        "--timeout", type=float, default=None, help="Request timeout in seconds"
+    )
 
     list_parser = profile_subparsers.add_parser("list", help="List saved profiles")
     list_parser.add_argument("--show-keys", action="store_true", help="Show unmasked API keys")
 
     delete_parser = profile_subparsers.add_parser("delete", help="Delete a profile")
-    delete_parser.add_argument("name")
+    delete_parser.add_argument("name", help="Name of the profile to delete")
 
     set_default_parser = profile_subparsers.add_parser(
         "set-default", help="Set the default profile"
     )
-    set_default_parser.add_argument("name")
+    set_default_parser.add_argument("name", help="Name of the profile to mark as default")
 
     return parser
 
