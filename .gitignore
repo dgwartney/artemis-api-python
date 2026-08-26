@@ -7,6 +7,7 @@ dist/
 .venv/
 venv/
 .env
+env.sh
 .pytest_cache/
 .ruff_cache/
 .coverage
