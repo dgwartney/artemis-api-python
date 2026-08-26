@@ -39,6 +39,24 @@ cd artemis-api-python
 uv sync
 ```
 
+## Getting your App ID and API key
+
+Before you can use this client, you need an Agentic App deployed in Kore.ai's Agent
+Platform Studio, plus an API key scoped to it. This repository does not cover how to
+build or configure an agent in Studio — see the official documentation:
+
+- [Deploying an agent](https://docs.kore.ai/agent-platform/deployment) — deploy to an
+  environment (`development`, `staging`, or `production`), which becomes your `--env-name`.
+- [API key management](https://docs.kore.ai/agent-platform/v1/apis/agentic-apps/api-key-mgmt) —
+  create an API scope and generate a key for your app; keys are app-specific and are
+  required in the `x-api-key` header.
+- [Sessions API reference](https://docs.kore.ai/agent-platform/v1/apis/agentic-apps/sessions)
+  and [Runs (execute) API reference](https://docs.kore.ai/agent-platform/v1/apis/agentic-apps/execute) —
+  the underlying HTTP contract this client wraps.
+
+Your app's ID (`--app-id`) is visible in Studio once the app is created; the environment
+name must match the one you deployed to.
+
 ## Quick Start
 
 ```bash
